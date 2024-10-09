@@ -49,7 +49,7 @@ get.counts <- function(a.row, outlier.m) {
 }
 
 
-# function to get Kendall's tau and the P-Value of tau after removing outlier pairs
+# function to get Kendall's tau and the P-Value of tau after removing OO-OO pairs
 get.tau.P <- function(a.row, outlier.m, filtered.m) {
     a.row.outlier <- outlier.m[a.row, ]
     a.row.NO <- a.row.outlier == 'NO'
@@ -68,7 +68,7 @@ analyze.outlier <- function(TPM.df, coldata.df, high.similarity.genes, chromosom
     TPM.m <- as.matrix(TPM.df[, rownames(coldata.df)])
 
 ## filtration: TPM > TPM.cutoff in at least one sample, on autosome or X chromosome,
-##     protein-coding, and without high sequence similarity
+##     protein-coding, and without high sequence similarity paralogs
     filtered.index <- rowMaxs(TPM.m, useNames = T) > TPM.cutoff
     filtered <- TPM.m[filtered.index, ]
     filtered.gene.metadata <- TPM.df[filtered.index, gene.metadata.cols]
@@ -128,7 +128,7 @@ analyze.outlier <- function(TPM.df, coldata.df, high.similarity.genes, chromosom
             write.table(cbind(GeneID.df, outlier.indep.gene.metadata, outlier.indep.out),
                         paste0(out.prefix, 'outlier.tsv'), quote = F, sep = '\t', row.names = F)
 
-## correlated OOs
+## correlated OO expression
 ### choose outlier: without UO, and with at least three OOs
             outlier.chosen <- outlier.indep[rowSums(outlier.indep == 'UO') == 0, ]
             outlier.chosen <- outlier.chosen[rowSums(outlier.chosen == 'OO') >= OO.pair.cutoff, ]
@@ -145,7 +145,7 @@ analyze.outlier <- function(TPM.df, coldata.df, high.similarity.genes, chromosom
                     filter(OO_OO >= OO.pair.cutoff, OO_NO == 0, NO_OO == 0)
 
                 if (nrow(outlier.pair.chosen) > 0) {
-### get Kendall's tau and the P-Value of tau after removing outlier pairs
+### get Kendall's tau and the P-Value of tau after removing OO-OO pairs
                     filtered.chosen <- filtered[genes.chosen, ]
                     outlier.pair.chosen[, 7:8] <- t(apply(outlier.pair.chosen[, 1:2], 1, get.tau.P,
                                                           outlier.chosen, filtered.chosen))
@@ -153,7 +153,7 @@ analyze.outlier <- function(TPM.df, coldata.df, high.similarity.genes, chromosom
 
                     outlier.pair.chosen$P_adj <- p.adjust(outlier.pair.chosen$P, method = 'bonferroni')
 
-### correlated OOs output
+### correlated OO expression output
                     outlier.indep.gene.metadata.chosen <- cbind(GeneID.df,
                         outlier.indep.gene.metadata)[genes.chosen, c('GeneID', 'Genename', 'Chr', 'Start')]
                     outlier.pair.chosen <- inner_join(outlier.pair.chosen, outlier.indep.gene.metadata.chosen,
@@ -180,7 +180,7 @@ TPM.df <- read.table('data/GTEx_brain_TPM.tsv', header = T, sep = '\t', row.name
 ## sample annotation file
 coldata.df <- read.table('data/GTEx_brain_coldata.tsv', header = T, sep = '\t', row.names = 'SAMPID')
 
-## genes with high similarity paralogs
+## genes with high sequence similarity paralogs
 high.similarity.genes <- read.table('data/human_genes_wParalogs.list')[, 1]
 
 
